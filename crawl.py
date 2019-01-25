@@ -9,7 +9,16 @@ class Crawl():
     def request(self):
         headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
         r = requests.get(self.url, headers=headers)
-        #print(r.text)
+        #print(r.text.split("}."))
+        class_dict = {}
+        for item in r.text.split(";}"):
+            if item.startswith("."):
+                splits = item.split("{background:")
+                key = splits[0][1:]
+                value = (splits[1].split()[0][1:][:-2], splits[1].split()[1][1:][:-2])
+                print(key, value)
+            else:
+                print(item)
         self.save_to_file(r)
 
     def save_to_file(self, r):
@@ -27,7 +36,9 @@ class Crawl():
         css_list = soup.find_all(attrs={"type": "text/css"})
         for css in css_list:
             if 'svgtextcss' in css.get('href'):
-                print(css.get('href'))
+                self.url = 'http:'+css.get('href')
+                self.request()
+                #print(css.get('href'))
 
         # # find all comments
         # comments = soup.find_all(attrs={"class": "info J-info-all clearfix Hide", "class": "desc J-desc"})
