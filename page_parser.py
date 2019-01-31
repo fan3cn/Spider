@@ -41,8 +41,11 @@ class PageParser():
         for item in text.split(";}"):
             if item.startswith("."):
                 splits = item.split("{background:")
+
                 key = splits[0][1:]
                 value = (splits[1].split()[0][1:][:-2], splits[1].split()[1][1:][:-2])
+
+                #print(key, value)
 
                 cache.instance_pos[key] = value
 
@@ -143,7 +146,7 @@ class PageParser():
 
 
     def extract_shop_info(self):
-        print("review_url")
+        print("extract_shop_info")
 
 
 
@@ -163,7 +166,7 @@ class PageParser():
                     comment = comment + seg.string.strip()
                 elif seg.name == 'span':
                     #<span class="mrsc35"></span>
-                    instance = str(seg)[13:19]
+                    instance = re.findall('\"\w*\"', str(seg))[0][1:-1]
                     character = self.get_character_by_pos(instance)
                     comment = comment + character
                 elif seg.name == 'br':
@@ -171,10 +174,14 @@ class PageParser():
             print(comment)
 
     def get_character_by_pos(self, instance):
-        if instance not in cache.instance_pos.keys():
+        class_ = ""
+        for key in cache.class_pos.keys():
+            if instance.startswith(key):
+                class_ = key
+        if class_ == "":
             print("Error!!! No such instance in cache.")
             return
-        class_ = instance[0:3]
+
         x,y = cache.instance_pos[instance]
 
         y_idx = cache.class_pos[class_][0].split().index(str(int(float(x))))
@@ -184,10 +191,13 @@ class PageParser():
 
 
 if __name__ == "__main__":
-    pp = PageParser('http://www.dianping.com/shop/4674001/review_all')
-
+    #pp = PageParser('http://www.dianping.com/shop/4674001/review_all')
     #PageParser().parse_svg_file('a974c69de518a0b1d9bda58f69bae6f5.svg.html')
     #parse_svg_file('test.xml')
-    pp.extract_comments()
+    #pp.extract_comments()
+    seg = "<span class=\"mrsc35\"></span>"
+    r = re.findall('\"\w*\"', seg)[0]
+    print(r[1:-1])
+
 
 
