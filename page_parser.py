@@ -20,7 +20,7 @@ class PageParser():
         return utils.get_file_name(self.url)
 
     def download_css_files(self):
-        text = open(self.file_path, 'rb').read()
+        text = open(self.file_path, 'rb+').read().decode('utf-8')
         soup = BeautifulSoup(text, "lxml")
 
         # find css files
@@ -30,10 +30,11 @@ class PageParser():
                 url = 'http:'+css.get('href')
                 request.request(url, './css/', 'css')
                 self.parse_css_file('./css/' + utils.get_file_name(url))
-        #print("Css files have been downloaded and parsed.")
+        print("Css files have been downloaded and parsed.")
 
     def parse_css_file(self, file_path):
-        text = open(file_path, 'rb').read().decode('utf-8')
+        print("Parsing %s ..."%file_path)
+        text = open(file_path, 'rb+').read().decode('utf-8')
         #print(text)
         class_svg = ""
         #instance_pos = {}
@@ -99,6 +100,8 @@ class PageParser():
 
 
     def parse_svg_file(self, file_path, class_):
+        print("Parsing %s ..." % file_path)
+
         if class_ in cache.class_text.keys():
             return
 
@@ -146,15 +149,56 @@ class PageParser():
 
 
     def extract_shop_info(self):
-        print("extract_shop_info")
+        print("Extracting shop basic info...")
+        text = open(self.file_path, 'rb+').read().decode("utf-8")
+        #print(text.decode("utf-8"))
+        # Shop info, location, category
+        soup = BeautifulSoup(text, "lxml")
+        list_crumb = soup.find_all(attrs={"class": "list-crumb"})
+        for crumb in list_crumb:
+            a_list = crumb.find_all('a')
+            for item in a_list:
+                print(item.contents[0])
+        #shop_name = soup.find(attrs={"class": "shop-name"}).contents[0]
+        # Price
+        rank_info = soup.find(attrs={"class": "rank-info"})
+        price = rank_info.find(attrs={"class": "price"}).contents[0]
+        print(price)
+        # Scores
+        scores = rank_info.find(attrs={"class": "score"})
+        for item in scores.find_all(attrs={"class": "item"}):
+            print(item.contents[0])
+        # Address
+        add_info = soup.find(attrs={"class": "address-info"}).contents
+        address = ""
+        for sub in add_info:
+            sub = str(sub).strip()
+            if sub.startswith('<'):
+                #print(sub)
+                sub = self.get_character_by_pos(sub)
+            address = address + sub
+            #print(sub)
+        print(address)
 
-
+        # Phone
+        phone_info = soup.find(attrs={"class": "phone-info"}).contents
+        phone = ""
+        for sub in phone_info:
+            if re.findall('^\s$', str(sub)):
+                phone = phone + " "
+                continue
+            sub = str(sub).strip()
+            if sub.startswith('<'):
+                sub = self.get_character_by_pos(sub)
+            phone = phone + sub
+        print(phone)
 
     def extract_comments(self):
+        print("Extracting shop comments...")
         # print(cache.class_pos)
         # print(cache.class_text)
         # print("x")
-        text = open(self.file_path, 'rb').read()
+        text = open(self.file_path, 'rb+').read().decode('utf-8')
         soup = BeautifulSoup(text, "lxml")
 
         # find reviews
@@ -166,20 +210,24 @@ class PageParser():
                     comment = comment + seg.string.strip()
                 elif seg.name == 'span':
                     #<span class="mrsc35"></span>
-                    instance = re.findall('\"\w*\"', str(seg))[0][1:-1]
-                    character = self.get_character_by_pos(instance)
+                    #instance = re.findall('\"\w*\"', str(seg))[0][1:-1]
+                    character = self.get_character_by_pos(str(seg))
                     comment = comment + character
                 elif seg.name == 'br':
                     comment = comment + '</br>'
             print(comment)
 
-    def get_character_by_pos(self, instance):
+    # #<span class="mrsc35"></span>
+    def get_character_by_pos(self, span):
+        instance = re.findall('\"\w*\"', span)[0][1:-1]
+        #print(instance)
+        #print(cache.class_pos)
         class_ = ""
         for key in cache.class_pos.keys():
             if instance.startswith(key):
                 class_ = key
         if class_ == "":
-            print("Error!!! No such instance in cache.")
+            print("Error!!! No such instance %s in cache."%instance)
             return
 
         x,y = cache.instance_pos[instance]

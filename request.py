@@ -8,7 +8,7 @@ def request(url, file_path='./html/', postfix='html'):
     # Check if file exits
     file_name = get_file_name(url, postfix)
     if os.path.exists(file_path + file_name):
-        print("File %s exits, skipped..."%file_name)
+        print("File %s exits, download skipped..."%file_name)
         return
 
     headers = {
